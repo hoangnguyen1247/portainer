@@ -49,7 +49,6 @@ angular.module('portainer.app').factory('Authentication', [
 
       clearSessionStorage();
       StateManager.clean();
-      EndpointProvider.clean();
       LocalStorage.cleanAuthData();
       LocalStorage.storeLoginStateUUID('');
       tryAutoLoginExtension();

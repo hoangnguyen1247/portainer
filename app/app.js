@@ -4,8 +4,6 @@ import { PortainerEndpointTypes } from 'Portainer/models/endpoint/models';
 
 /* @ngInject */
 export function onStartupAngular($rootScope, $state, $interval, LocalStorage, EndpointProvider, SystemService, cfpLoadingBar, $transitions, HttpRequestHelper) {
-  EndpointProvider.initialize();
-
   $rootScope.$state = $state;
   const defaultTitle = document.title;
 
