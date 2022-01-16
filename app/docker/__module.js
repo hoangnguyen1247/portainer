@@ -33,7 +33,6 @@ angular.module('portainer.docker', ['portainer.app', reactModule]).config([
             }
 
             EndpointProvider.setEndpointID(endpoint.Id);
-            EndpointProvider.setOfflineModeFromStatus(endpoint.Status);
 
             await StateManager.updateEndpointState(endpoint);
           } catch (e) {
