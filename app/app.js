@@ -1,9 +1,8 @@
 import $ from 'jquery';
 import feather from 'feather-icons';
-import { PortainerEndpointTypes } from 'Portainer/models/endpoint/models';
 
 /* @ngInject */
-export function onStartupAngular($rootScope, $state, $interval, LocalStorage, EndpointProvider, SystemService, cfpLoadingBar, $transitions, HttpRequestHelper) {
+export function onStartupAngular($rootScope, $state, LocalStorage, cfpLoadingBar, $transitions, HttpRequestHelper, EndpointProvider) {
   $rootScope.$state = $state;
   const defaultTitle = document.title;
 
@@ -31,11 +30,6 @@ export function onStartupAngular($rootScope, $state, $interval, LocalStorage, En
     feather.replace();
   });
 
-  // Keep-alive Edge endpoints by sending a ping request every minute
-  $interval(() => {
-    ping(EndpointProvider, SystemService);
-  }, 60 * 1000);
-
   $(document).ajaxSend((event, jqXhr, jqOpts) => {
     const type = jqOpts.type === 'POST' || jqOpts.type === 'PUT' || jqOpts.type === 'PATCH';
     const hasNoContentType = jqOpts.contentType !== 'application/json' && jqOpts.headers && !jqOpts.headers['Content-Type'];
@@ -44,11 +38,4 @@ export function onStartupAngular($rootScope, $state, $interval, LocalStorage, En
     }
     jqXhr.setRequestHeader('Authorization', 'Bearer ' + LocalStorage.getJWT());
   });
-}
-
-function ping(EndpointProvider, SystemService) {
-  const endpoint = EndpointProvider.currentEndpoint();
-  if (endpoint && endpoint.Type == PortainerEndpointTypes.EdgeAgentOnDockerEnvironment) {
-    SystemService.ping(endpoint.Id);
-  }
 }
