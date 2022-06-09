@@ -156,6 +156,14 @@ func (handler *Handler) endpointList(w http.ResponseWriter, r *http.Request) *ht
 		filteredEndpoints = filteredEndpointsByTags(filteredEndpoints, tagIDs, endpointGroups, tagsPartialMatch)
 	}
 
+	var agentVersions []string
+	agentVersions, exists := r.Form["agentVersions"]
+	if exists {
+		filteredEndpoints = filter(endpoints, func(endpoint portainer.Endpoint) bool {
+			return contains(agentVersions, endpoint.Agent.Version)
+		})
+	}
+
 	// Sort endpoints by field
 	sortEndpointsByField(filteredEndpoints, endpointGroups, sortField, sortOrder == "desc")
 
@@ -489,4 +497,25 @@ func filterEndpointsByName(endpoints []portainer.Endpoint, name string) []portai
 		}
 	}
 	return filteredEndpoints
+}
+
+func filter(endpoints []portainer.Endpoint, predicate func(endpoint portainer.Endpoint) bool) []portainer.Endpoint {
+	filteredEndpoints := make([]portainer.Endpoint, 0)
+
+	for _, endpoint := range endpoints {
+		if predicate(endpoint) {
+			filteredEndpoints = append(filteredEndpoints, endpoint)
+		}
+	}
+	return filteredEndpoints
+}
+
+func contains(strings []string, param string) bool {
+	for _, str := range strings {
+		if str == param {
+			return true
+		}
+	}
+
+	return false
 }
