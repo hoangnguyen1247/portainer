@@ -196,6 +196,7 @@ func (service *Service) snapshotEndpoints() error {
 
 		latestEndpointReference.Snapshots = endpoint.Snapshots
 		latestEndpointReference.Kubernetes.Snapshots = endpoint.Kubernetes.Snapshots
+		latestEndpointReference.Agent.Version = endpoint.Agent.Version
 
 		err = service.dataStore.Endpoint().UpdateEndpoint(latestEndpointReference.ID, latestEndpointReference)
 		if err != nil {
