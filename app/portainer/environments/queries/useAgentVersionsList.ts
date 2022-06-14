@@ -1,14 +1,7 @@
 import { useQuery } from 'react-query';
 
-import {
-  EnvironmentsQueryParams,
-  getAgentVersions,
-} from '../environment.service';
+import { getAgentVersions } from '../environment.service';
 
-export function useAgentVersionsList(
-  query: Omit<EnvironmentsQueryParams, 'agentVersions'> = {}
-) {
-  return useQuery(['environments', 'agentVersions', query], () =>
-    getAgentVersions(query)
-  );
+export function useAgentVersionsList() {
+  return useQuery(['environments', 'agentVersions'], () => getAgentVersions());
 }

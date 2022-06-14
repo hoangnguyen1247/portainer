@@ -62,17 +62,10 @@ export async function getEndpoints(
   }
 }
 
-export async function getAgentVersions(
-  query: Omit<EnvironmentsQueryParams, 'agentVersions'> = {}
-) {
-  if (query.tagIds && query.tagIds.length === 0) {
-    return [];
-  }
-
+export async function getAgentVersions() {
   try {
     const response = await axios.get<string[]>(
-      buildUrl(undefined, 'agent_versions'),
-      { params: query }
+      buildUrl(undefined, 'agent_versions')
     );
     return response.data;
   } catch (e) {
