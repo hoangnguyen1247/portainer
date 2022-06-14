@@ -73,7 +73,7 @@ func Test_EndpointList_AgentVersion(t *testing.T) {
 			is := assert.New(t)
 			query := ""
 			for _, filter := range test.filter {
-				query += fmt.Sprintf("agentVersions=%s&", filter)
+				query += fmt.Sprintf("agentVersions[]=%s&", filter)
 			}
 
 			req := buildEndpointListRequest(query)
@@ -115,7 +115,7 @@ func Test_endpointList_edgeDeviceFilter(t *testing.T) {
 
 	type endpointListEdgeDeviceTest struct {
 		endpointListTest
-		filter string
+		filter EdgeDeviceFilter
 	}
 
 	tests := []endpointListEdgeDeviceTest{

@@ -12,7 +12,7 @@ import type {
   EnvironmentStatus,
 } from '../types';
 
-import { arrayToJson, buildUrl } from './utils';
+import { buildUrl } from './utils';
 
 export interface EnvironmentsQueryParams {
   search?: string;
@@ -22,51 +22,30 @@ export interface EnvironmentsQueryParams {
   tagsPartialMatch?: boolean;
   groupIds?: EnvironmentGroupId[];
   status?: EnvironmentStatus[];
-  sort?: string;
-  order?: 'asc' | 'desc';
   edgeDeviceFilter?: 'all' | 'trusted' | 'untrusted' | 'none';
   name?: string;
+  agentVersions?: string[];
 }
 
 export async function getEndpoints(
   start: number,
   limit: number,
-  {
-    types,
-    tagIds,
-    endpointIds,
-    status,
-    groupIds,
-    ...query
-  }: EnvironmentsQueryParams = {}
+  sort: { by?: string; order?: 'asc' | 'desc' } = {},
+  query: EnvironmentsQueryParams = {}
 ) {
-  if (tagIds && tagIds.length === 0) {
+  if (query.tagIds && query.tagIds.length === 0) {
     return { totalCount: 0, value: <Environment[]>[] };
   }
 
   const url = buildUrl();
 
-  const params: Record<string, unknown> = { start, limit, ...query };
-
-  if (types) {
-    params.types = arrayToJson(types);
-  }
-
-  if (tagIds) {
-    params.tagIds = arrayToJson(tagIds);
-  }
-
-  if (endpointIds) {
-    params.endpointIds = arrayToJson(endpointIds);
-  }
-
-  if (status) {
-    params.status = arrayToJson(status);
-  }
-
-  if (groupIds) {
-    params.groupIds = arrayToJson(groupIds);
-  }
+  const params: Record<string, unknown> = {
+    start,
+    limit,
+    sort: sort.by,
+    order: sort.order,
+    ...query,
+  };
 
   try {
     const response = await axios.get<Environment[]>(url, { params });
@@ -78,6 +57,24 @@ export async function getEndpoints(
       value: response.data,
       totalAvailable: parseInt(totalAvailable, 10),
     };
+  } catch (e) {
+    throw parseAxiosError(e as Error);
+  }
+}
+
+export async function getAgentVersions(
+  query: Omit<EnvironmentsQueryParams, 'agentVersions'> = {}
+) {
+  if (query.tagIds && query.tagIds.length === 0) {
+    return [];
+  }
+
+  try {
+    const response = await axios.get<string[]>(
+      buildUrl(undefined, 'agent_versions'),
+      { params: query }
+    );
+    return response.data;
   } catch (e) {
     throw parseAxiosError(e as Error);
   }
@@ -114,7 +111,7 @@ export async function endpointsByGroup(
   search: string,
   groupId: EnvironmentGroupId
 ) {
-  return getEndpoints(start, limit, { search, groupIds: [groupId] });
+  return getEndpoints(start, limit, undefined, { search, groupIds: [groupId] });
 }
 
 export async function disassociateEndpoint(id: EnvironmentId) {

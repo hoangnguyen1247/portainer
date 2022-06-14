@@ -7,9 +7,11 @@ import { EnvironmentsQueryParams, getEndpoints } from '../environment.service';
 
 export const ENVIRONMENTS_POLLING_INTERVAL = 30000; // in ms
 
-interface Query extends EnvironmentsQueryParams {
+export interface Query extends EnvironmentsQueryParams {
   page?: number;
   pageLimit?: number;
+  sort?: string;
+  order?: 'asc' | 'desc';
 }
 
 type GetEndpointsResponse = Awaited<ReturnType<typeof getEndpoints>>;
@@ -31,7 +33,7 @@ export function refetchIfAnyOffline(data?: GetEndpointsResponse) {
 }
 
 export function useEnvironmentList(
-  { page = 1, pageLimit = 100, ...query }: Query = {},
+  { page = 1, pageLimit = 100, sort, order, ...query }: Query = {},
   refetchInterval?:
     | number
     | false
@@ -45,12 +47,14 @@ export function useEnvironmentList(
       {
         page,
         pageLimit,
+        sort,
+        order,
         ...query,
       },
     ],
     async () => {
       const start = (page - 1) * pageLimit + 1;
-      return getEndpoints(start, pageLimit, query);
+      return getEndpoints(start, pageLimit, { by: sort, order }, query);
     },
     {
       staleTime,

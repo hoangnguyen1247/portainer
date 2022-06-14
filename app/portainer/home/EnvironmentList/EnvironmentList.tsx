@@ -22,6 +22,8 @@ import {
 import { useGroups } from '@/portainer/environment-groups/queries';
 import { useTags } from '@/portainer/tags/queries';
 import { Filter } from '@/portainer/home/types';
+import { useAgentVersionsList } from '@/portainer/environments/queries/useAgentVersionsList';
+import { EnvironmentsQueryParams } from '@/portainer/environments/environment.service';
 
 import { TableFooter } from '@@/datatables/TableFooter';
 import { TableActions, TableContainer, TableTitle } from '@@/datatables';
@@ -35,8 +37,8 @@ import { PaginationControls } from '@@/PaginationControls';
 
 import { EnvironmentItem } from './EnvironmentItem';
 import { KubeconfigButton } from './KubeconfigButton';
-import styles from './EnvironmentList.module.css';
 import { NoEnvironmentsInfoPanel } from './NoEnvironmentsInfoPanel';
+import styles from './EnvironmentList.module.css';
 
 interface Props {
   onClickItem(environment: Environment): void;
@@ -118,26 +120,40 @@ export function EnvironmentList({ onClickItem, onRefresh }: Props) {
     'sortby_state',
     undefined
   );
+  const [agentVersions, setAgentVersions] = useHomePageFilter<Filter<string>[]>(
+    'agentVersions',
+    []
+  );
 
   const groupsQuery = useGroups();
+
+  const environmentsQueryParams: Omit<
+    EnvironmentsQueryParams,
+    'agentVersions'
+  > = {
+    types: platformType,
+    search: debouncedTextFilter,
+    status: statusFilter,
+    tagIds: tagFilter?.length ? tagFilter : undefined,
+    groupIds: groupFilter,
+    edgeDeviceFilter: 'none',
+    tagsPartialMatch: true,
+  };
 
   const { isLoading, environments, totalCount, totalAvailable } =
     useEnvironmentList(
       {
         page,
         pageLimit,
-        types: platformType,
-        search: debouncedTextFilter,
-        status: statusFilter,
-        tagIds: tagFilter?.length ? tagFilter : undefined,
-        groupIds: groupFilter,
         sort: sortByFilter,
         order: sortByDescending ? 'desc' : 'asc',
-        edgeDeviceFilter: 'none',
-        tagsPartialMatch: true,
+        agentVersions: agentVersions.map((a) => a.value),
+        ...environmentsQueryParams,
       },
       refetchIfAnyOffline
     );
+
+  const agentVersionsQuery = useAgentVersionsList(environmentsQueryParams);
 
   useEffect(() => {
     setPage(1);
@@ -357,6 +373,17 @@ export function EnvironmentList({ onClickItem, onRefresh }: Props) {
                   onChange={groupOnChange}
                   placeHolder="Groups"
                   value={groupState}
+                />
+              </div>
+              <div className={styles.filterLeft}>
+                <HomepageFilter<string>
+                  filterOptions={agentVersionsQuery.data?.map((v) => ({
+                    label: v,
+                    value: v,
+                  }))}
+                  onChange={setAgentVersions}
+                  placeHolder="Agent Version"
+                  value={agentVersions}
                 />
               </div>
               <button

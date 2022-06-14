@@ -36,7 +36,7 @@ async function isNameUnique(name?: string) {
   }
 
   try {
-    const result = await getEndpoints(0, 1, { name });
+    const result = await getEndpoints(0, 1, undefined, { name });
     if (result.totalCount > 0) {
       return false;
     }
