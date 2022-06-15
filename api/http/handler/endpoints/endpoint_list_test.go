@@ -97,15 +97,15 @@ func Test_EndpointList_AgentVersion(t *testing.T) {
 
 func Test_endpointList_edgeDeviceFilter(t *testing.T) {
 
-	trustedEndpoint := portainer.Endpoint{ID: 1, UserTrusted: true, IsEdgeDevice: true, GroupID: 1, Type: portainer.EdgeAgentOnDockerEnvironment}
-	untrustedEndpoint := portainer.Endpoint{ID: 2, UserTrusted: false, IsEdgeDevice: true, GroupID: 1, Type: portainer.EdgeAgentOnDockerEnvironment}
+	trustedEdgeDevice := portainer.Endpoint{ID: 1, UserTrusted: true, IsEdgeDevice: true, GroupID: 1, Type: portainer.EdgeAgentOnDockerEnvironment}
+	untrustedEdgeDevice := portainer.Endpoint{ID: 2, UserTrusted: false, IsEdgeDevice: true, GroupID: 1, Type: portainer.EdgeAgentOnDockerEnvironment}
 	regularUntrustedEdgeEndpoint := portainer.Endpoint{ID: 3, UserTrusted: false, IsEdgeDevice: false, GroupID: 1, Type: portainer.EdgeAgentOnDockerEnvironment}
 	regularTrustedEdgeEndpoint := portainer.Endpoint{ID: 4, UserTrusted: true, IsEdgeDevice: false, GroupID: 1, Type: portainer.EdgeAgentOnDockerEnvironment}
 	regularEndpoint := portainer.Endpoint{ID: 5, UserTrusted: false, IsEdgeDevice: false, GroupID: 1, Type: portainer.DockerEnvironment}
 
 	handler, teardown := setup(t, []portainer.Endpoint{
-		trustedEndpoint,
-		untrustedEndpoint,
+		trustedEdgeDevice,
+		untrustedEdgeDevice,
 		regularUntrustedEdgeEndpoint,
 		regularTrustedEdgeEndpoint,
 		regularEndpoint,
@@ -115,37 +115,32 @@ func Test_endpointList_edgeDeviceFilter(t *testing.T) {
 
 	type endpointListEdgeDeviceTest struct {
 		endpointListTest
-		filter EdgeDeviceFilter
+		edgeDevice          *bool
+		edgeDeviceUntrusted bool
 	}
 
 	tests := []endpointListEdgeDeviceTest{
 		{
-			endpointListTest{
-				"should show all edge endpoints",
-				[]portainer.EndpointID{trustedEndpoint.ID, untrustedEndpoint.ID, regularUntrustedEdgeEndpoint.ID, regularTrustedEdgeEndpoint.ID},
+			endpointListTest: endpointListTest{
+				"should show only trusted edge devices and regular endpoints",
+				[]portainer.EndpointID{trustedEdgeDevice.ID, regularEndpoint.ID},
 			},
-			EdgeDeviceFilterAll,
+			edgeDevice: BoolAddr(true),
 		},
 		{
-			endpointListTest{
-				"should show only trusted edge devices",
-				[]portainer.EndpointID{trustedEndpoint.ID, regularTrustedEdgeEndpoint.ID},
+			endpointListTest: endpointListTest{
+				"should show only untrusted edge devices and regular endpoints",
+				[]portainer.EndpointID{untrustedEdgeDevice.ID, regularEndpoint.ID},
 			},
-			EdgeDeviceFilterTrusted,
+			edgeDevice:          BoolAddr(true),
+			edgeDeviceUntrusted: true,
 		},
 		{
-			endpointListTest{
-				"should show only untrusted edge devices",
-				[]portainer.EndpointID{untrustedEndpoint.ID, regularUntrustedEdgeEndpoint.ID},
-			},
-			EdgeDeviceFilterUntrusted,
-		},
-		{
-			endpointListTest{
+			endpointListTest: endpointListTest{
 				"should show no edge devices",
 				[]portainer.EndpointID{regularEndpoint.ID, regularUntrustedEdgeEndpoint.ID, regularTrustedEdgeEndpoint.ID},
 			},
-			EdgeDeviceFilterNone,
+			edgeDevice: BoolAddr(false),
 		},
 	}
 
@@ -153,7 +148,12 @@ func Test_endpointList_edgeDeviceFilter(t *testing.T) {
 		t.Run(test.title, func(t *testing.T) {
 			is := assert.New(t)
 
-			req := buildEndpointListRequest(fmt.Sprintf("edgeDeviceFilter=%s", test.filter))
+			query := fmt.Sprintf("edgeDeviceUntrusted=%v&", test.edgeDeviceUntrusted)
+			if test.edgeDevice != nil {
+				query += fmt.Sprintf("edgeDevice=%v&", *test.edgeDevice)
+			}
+
+			req := buildEndpointListRequest(query)
 			resp, err := doEndpointListRequest(req, handler, is)
 			is.NoError(err)
 

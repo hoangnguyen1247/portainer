@@ -1,12 +1,15 @@
 import { ReactNode, useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { RefreshCcw } from 'react-feather';
+import _ from 'lodash';
 
 import { usePaginationLimitState } from '@/portainer/hooks/usePaginationLimitState';
 import {
   Environment,
   EnvironmentType,
   EnvironmentStatus,
+  PlatformType,
+  EdgeTypes,
 } from '@/portainer/environments/types';
 import { EnvironmentGroupId } from '@/portainer/environment-groups/types';
 import { useIsAdmin } from '@/portainer/hooks/useUser';
@@ -45,45 +48,40 @@ interface Props {
   onRefresh(): void;
 }
 
-const PlatformOptions = [
-  { value: EnvironmentType.Docker, label: 'Docker' },
-  { value: EnvironmentType.Azure, label: 'Azure' },
-  { value: EnvironmentType.KubernetesLocal, label: 'Kubernetes' },
-];
-
 const status = [
   { value: EnvironmentStatus.Up, label: 'Up' },
   { value: EnvironmentStatus.Down, label: 'Down' },
 ];
 
-const SortByOptions = [
+const sortByOptions = [
   { value: 1, label: 'Name' },
   { value: 2, label: 'Group' },
   { value: 3, label: 'Status' },
 ];
 
+enum ConnectionType {
+  API,
+  Agent,
+  EdgeAgent,
+  EdgeDevice,
+}
+
 const storageKey = 'home_endpoints';
-const allEnvironmentType = [
-  EnvironmentType.Docker,
-  EnvironmentType.AgentOnDocker,
-  EnvironmentType.Azure,
-  EnvironmentType.EdgeAgentOnDocker,
-  EnvironmentType.KubernetesLocal,
-  EnvironmentType.AgentOnKubernetes,
-  EnvironmentType.EdgeAgentOnKubernetes,
-];
 
 export function EnvironmentList({ onClickItem, onRefresh }: Props) {
   const isAdmin = useIsAdmin();
 
-  const [platformType, setPlatformType] = useHomePageFilter(
-    'platformType',
-    allEnvironmentType
-  );
+  const [platformTypes, setPlatformTypes] = useHomePageFilter<
+    Filter<PlatformType>[]
+  >('platformType', []);
   const [searchBarValue, setSearchBarValue] = useSearchBarState(storageKey);
   const [pageLimit, setPageLimit] = usePaginationLimitState(storageKey);
   const [page, setPage] = useState(1);
   const debouncedTextFilter = useDebounce(searchBarValue);
+
+  const [connectionTypes, setConnectionTypes] = useHomePageFilter<
+    Filter<ConnectionType>[]
+  >('connectionTypes', []);
 
   const [statusFilter, setStatusFilter] = useHomePageFilter<
     EnvironmentStatus[]
@@ -103,10 +101,6 @@ export function EnvironmentList({ onClickItem, onRefresh }: Props) {
     false
   );
 
-  const [platformState, setPlatformState] = useHomePageFilter<Filter[]>(
-    'type_state',
-    []
-  );
   const [statusState, setStatusState] = useHomePageFilter<Filter[]>(
     'status_state',
     []
@@ -117,7 +111,7 @@ export function EnvironmentList({ onClickItem, onRefresh }: Props) {
     []
   );
   const [sortByState, setSortByState] = useHomePageFilter<Filter | undefined>(
-    'sortby_state',
+    'sort_by_state',
     undefined
   );
   const [agentVersions, setAgentVersions] = useHomePageFilter<Filter<string>[]>(
@@ -128,15 +122,20 @@ export function EnvironmentList({ onClickItem, onRefresh }: Props) {
   const groupsQuery = useGroups();
 
   const environmentsQueryParams: EnvironmentsQueryParams = {
-    types: platformType,
+    types: getTypes(
+      platformTypes.map((p) => p.value),
+      connectionTypes.map((p) => p.value)
+    ),
     search: debouncedTextFilter,
     status: statusFilter,
     tagIds: tagFilter?.length ? tagFilter : undefined,
     groupIds: groupFilter,
-    edgeDeviceFilter: 'none',
+    edgeDevice: getEdgeDeviceFilter(connectionTypes.map((p) => p.value)),
     tagsPartialMatch: true,
     agentVersions: agentVersions.map((a) => a.value),
   };
+
+  const tagsQuery = useTags();
 
   const { isLoading, environments, totalCount, totalAvailable } =
     useEnvironmentList(
@@ -164,8 +163,7 @@ export function EnvironmentList({ onClickItem, onRefresh }: Props) {
     label,
   }));
 
-  const alltags = useTags();
-  const tagOptions = [...(alltags.tags || [])];
+  const tagOptions = [...(tagsQuery.tags || [])];
   const uniqueTag = [
     ...new Map(tagOptions.map((item) => [item.ID, item])).values(),
   ].map(({ ID: value, Name: label }) => ({
@@ -173,115 +171,8 @@ export function EnvironmentList({ onClickItem, onRefresh }: Props) {
     label,
   }));
 
-  function platformOnChange(filterOptions: Filter[]) {
-    setPlatformState(filterOptions);
-    const dockerBaseType = EnvironmentType.Docker;
-    const kubernetesBaseType = EnvironmentType.KubernetesLocal;
-    const dockerRelateType = [
-      EnvironmentType.AgentOnDocker,
-      EnvironmentType.EdgeAgentOnDocker,
-    ];
-    const kubernetesRelateType = [
-      EnvironmentType.AgentOnKubernetes,
-      EnvironmentType.EdgeAgentOnKubernetes,
-    ];
-
-    if (filterOptions.length === 0) {
-      setPlatformType(allEnvironmentType);
-    } else {
-      let finalFilterEnvironment = filterOptions.map(
-        (filterOption) => filterOption.value
-      );
-      if (finalFilterEnvironment.includes(dockerBaseType)) {
-        finalFilterEnvironment = [
-          ...finalFilterEnvironment,
-          ...dockerRelateType,
-        ];
-      }
-      if (finalFilterEnvironment.includes(kubernetesBaseType)) {
-        finalFilterEnvironment = [
-          ...finalFilterEnvironment,
-          ...kubernetesRelateType,
-        ];
-      }
-      setPlatformType(finalFilterEnvironment);
-    }
-  }
-
-  function statusOnChange(filterOptions: Filter[]) {
-    setStatusState(filterOptions);
-    if (filterOptions.length === 0) {
-      setStatusFilter([]);
-    } else {
-      const filteredStatus = [
-        ...new Set(
-          filterOptions.map(
-            (filterOptions: { value: number }) => filterOptions.value
-          )
-        ),
-      ];
-      setStatusFilter(filteredStatus);
-    }
-  }
-
-  function groupOnChange(filterOptions: Filter[]) {
-    setGroupState(filterOptions);
-    if (filterOptions.length === 0) {
-      setGroupFilter([]);
-    } else {
-      const filteredGroups = [
-        ...new Set(
-          filterOptions.map(
-            (filterOptions: { value: number }) => filterOptions.value
-          )
-        ),
-      ];
-      setGroupFilter(filteredGroups);
-    }
-  }
-
-  function tagOnChange(filterOptions: Filter[]) {
-    setTagState(filterOptions);
-    if (filterOptions.length === 0) {
-      setTagFilter([]);
-    } else {
-      const filteredTags = [
-        ...new Set(
-          filterOptions.map(
-            (filterOptions: { value: number }) => filterOptions.value
-          )
-        ),
-      ];
-      setTagFilter(filteredTags);
-    }
-  }
-
-  function clearFilter() {
-    setPlatformState([]);
-    setPlatformType(allEnvironmentType);
-    setStatusState([]);
-    setStatusFilter([]);
-    setTagState([]);
-    setTagFilter([]);
-    setGroupState([]);
-    setGroupFilter([]);
-  }
-
-  function sortOnchange(filterOptions: Filter) {
-    if (filterOptions !== null) {
-      setSortByFilter(filterOptions.label);
-      setSortByButton(true);
-      setSortByState(filterOptions);
-    } else {
-      setSortByFilter('');
-      setSortByButton(true);
-      setSortByState(undefined);
-    }
-  }
-
-  function sortOndescending() {
-    setSortByDescending(!sortByDescending);
-  }
+  const connectionTypeOptions = getConnectionTypeOptions(platformTypes);
+  const platformTypeOptions = getPlatformTypeOptions(connectionTypes);
 
   return (
     <>
@@ -337,10 +228,18 @@ export function EnvironmentList({ onClickItem, onRefresh }: Props) {
             <div className={styles.filterContainer}>
               <div className={styles.filterLeft}>
                 <HomepageFilter
-                  filterOptions={PlatformOptions}
-                  onChange={platformOnChange}
+                  filterOptions={platformTypeOptions}
+                  onChange={setPlatformTypes}
                   placeHolder="Platform"
-                  value={platformState}
+                  value={platformTypes}
+                />
+              </div>
+              <div className={styles.filterLeft}>
+                <HomepageFilter
+                  filterOptions={connectionTypeOptions}
+                  onChange={setConnectionTypes}
+                  placeHolder="Connection Type"
+                  value={connectionTypes}
                 />
               </div>
               <div className={styles.filterLeft}>
@@ -369,10 +268,12 @@ export function EnvironmentList({ onClickItem, onRefresh }: Props) {
               </div>
               <div className={styles.filterLeft}>
                 <HomepageFilter<string>
-                  filterOptions={agentVersionsQuery.data?.map((v) => ({
-                    label: v,
-                    value: v,
-                  }))}
+                  filterOptions={
+                    agentVersionsQuery.data?.map((v) => ({
+                      label: v,
+                      value: v,
+                    })) || []
+                  }
                   onChange={setAgentVersions}
                   placeHolder="Agent Version"
                   value={agentVersions}
@@ -387,9 +288,9 @@ export function EnvironmentList({ onClickItem, onRefresh }: Props) {
               </button>
               <div className={styles.filterRight}>
                 <SortbySelector
-                  filterOptions={SortByOptions}
+                  filterOptions={sortByOptions}
                   onChange={sortOnchange}
-                  onDescending={sortOndescending}
+                  onDescending={sortOnDescending}
                   placeHolder="Sort By"
                   sortByDescending={sortByDescending}
                   sortByButton={sortByButton}
@@ -428,6 +329,206 @@ export function EnvironmentList({ onClickItem, onRefresh }: Props) {
         </div>
       </div>
     </>
+  );
+
+  function getEdgeDeviceFilter(connectionTypes: ConnectionType[]) {
+    // show both types of edge agent if both are selected or  if no connection type is selected
+    if (
+      connectionTypes.length === 0 ||
+      (connectionTypes.includes(ConnectionType.EdgeAgent) &&
+        connectionTypes.includes(ConnectionType.EdgeDevice))
+    ) {
+      return undefined;
+    }
+
+    return connectionTypes.includes(ConnectionType.EdgeDevice);
+  }
+
+  function getTypes(
+    platformTypes: PlatformType[],
+    connectionTypes: ConnectionType[]
+  ) {
+    if (platformTypes.length === 0 && connectionTypes.length === 0) {
+      return [];
+    }
+
+    const typesByPlatform = {
+      [PlatformType.Docker]: [
+        EnvironmentType.Docker,
+        EnvironmentType.AgentOnDocker,
+        EnvironmentType.EdgeAgentOnDocker,
+      ],
+      [PlatformType.Azure]: [EnvironmentType.Azure],
+      [PlatformType.Kubernetes]: [
+        EnvironmentType.KubernetesLocal,
+        EnvironmentType.AgentOnKubernetes,
+        EnvironmentType.EdgeAgentOnKubernetes,
+      ],
+    };
+
+    const typesByConnection = {
+      [ConnectionType.API]: [
+        EnvironmentType.Azure,
+        EnvironmentType.KubernetesLocal,
+        EnvironmentType.Docker,
+      ],
+      [ConnectionType.Agent]: [
+        EnvironmentType.AgentOnDocker,
+        EnvironmentType.AgentOnKubernetes,
+      ],
+      [ConnectionType.EdgeAgent]: EdgeTypes,
+      [ConnectionType.EdgeDevice]: EdgeTypes,
+    };
+
+    const selectedTypesByPlatform = platformTypes.flatMap(
+      (platformType) => typesByPlatform[platformType]
+    );
+    const selectedTypesByConnection = connectionTypes.flatMap(
+      (connectionType) => typesByConnection[connectionType]
+    );
+
+    if (selectedTypesByPlatform.length === 0) {
+      return selectedTypesByConnection;
+    }
+
+    if (selectedTypesByConnection.length === 0) {
+      return selectedTypesByPlatform;
+    }
+
+    return _.intersection(selectedTypesByConnection, selectedTypesByPlatform);
+  }
+
+  function statusOnChange(filterOptions: Filter[]) {
+    setStatusState(filterOptions);
+    if (filterOptions.length === 0) {
+      setStatusFilter([]);
+    } else {
+      const filteredStatus = [
+        ...new Set(
+          filterOptions.map(
+            (filterOptions: { value: number }) => filterOptions.value
+          )
+        ),
+      ];
+      setStatusFilter(filteredStatus);
+    }
+  }
+
+  function groupOnChange(filterOptions: Filter[]) {
+    setGroupState(filterOptions);
+    if (filterOptions.length === 0) {
+      setGroupFilter([]);
+    } else {
+      const filteredGroups = [
+        ...new Set(
+          filterOptions.map(
+            (filterOptions: { value: number }) => filterOptions.value
+          )
+        ),
+      ];
+      setGroupFilter(filteredGroups);
+    }
+  }
+
+  function tagOnChange(filterOptions: Filter[]) {
+    setTagState(filterOptions);
+    if (filterOptions.length === 0) {
+      setTagFilter([]);
+    } else {
+      const filteredTags = [
+        ...new Set(
+          filterOptions.map(
+            (filterOptions: { value: number }) => filterOptions.value
+          )
+        ),
+      ];
+      setTagFilter(filteredTags);
+    }
+  }
+
+  function clearFilter() {
+    setPlatformTypes([]);
+    setStatusState([]);
+    setStatusFilter([]);
+    setTagState([]);
+    setTagFilter([]);
+    setGroupState([]);
+    setGroupFilter([]);
+  }
+
+  function sortOnchange(filterOptions: Filter) {
+    if (filterOptions !== null) {
+      setSortByFilter(filterOptions.label);
+      setSortByButton(true);
+      setSortByState(filterOptions);
+    } else {
+      setSortByFilter('');
+      setSortByButton(true);
+      setSortByState(undefined);
+    }
+  }
+
+  function sortOnDescending() {
+    setSortByDescending(!sortByDescending);
+  }
+}
+
+function getConnectionTypeOptions(platformTypes: Filter<PlatformType>[]) {
+  const platformTypeConnectionType = {
+    [PlatformType.Docker]: [
+      ConnectionType.API,
+      ConnectionType.Agent,
+      ConnectionType.EdgeAgent,
+      ConnectionType.EdgeDevice,
+    ],
+    [PlatformType.Azure]: [ConnectionType.API],
+    [PlatformType.Kubernetes]: [
+      ConnectionType.Agent,
+      ConnectionType.EdgeAgent,
+      ConnectionType.EdgeDevice,
+    ],
+  };
+
+  const connectionTypesDefaultOptions = [
+    { value: ConnectionType.API, label: 'API' },
+    { value: ConnectionType.Agent, label: 'Agent' },
+    { value: ConnectionType.EdgeAgent, label: 'Edge Agent' },
+    { value: ConnectionType.EdgeDevice, label: 'Edge Device' },
+  ];
+
+  if (platformTypes.length === 0) {
+    return connectionTypesDefaultOptions;
+  }
+
+  return _.compact(
+    _.intersection(
+      ...platformTypes.map((p) => platformTypeConnectionType[p.value])
+    ).map((c) => connectionTypesDefaultOptions.find((o) => o.value === c))
+  );
+}
+
+function getPlatformTypeOptions(connectionTypes: Filter<ConnectionType>[]) {
+  const platformDefaultOptions = [
+    { value: PlatformType.Docker, label: 'Docker' },
+    { value: PlatformType.Azure, label: 'Azure' },
+    { value: PlatformType.Kubernetes, label: 'Kubernetes' },
+  ];
+
+  if (connectionTypes.length === 0) {
+    return platformDefaultOptions;
+  }
+
+  const connectionTypePlatformType = {
+    [ConnectionType.API]: [PlatformType.Docker, PlatformType.Azure],
+    [ConnectionType.Agent]: [PlatformType.Docker, PlatformType.Kubernetes],
+    [ConnectionType.EdgeAgent]: [PlatformType.Kubernetes, PlatformType.Docker],
+    [ConnectionType.EdgeDevice]: [PlatformType.Docker, PlatformType.Kubernetes],
+  };
+
+  return _.compact(
+    _.intersection(
+      ...connectionTypes.map((p) => connectionTypePlatformType[p.value])
+    ).map((c) => platformDefaultOptions.find((o) => o.value === c))
   );
 }
 

@@ -65,15 +65,15 @@ func Test_Filter_AgentVersion(t *testing.T) {
 
 func Test_Filter_edgeDeviceFilter(t *testing.T) {
 
-	trustedEndpoint := portainer.Endpoint{ID: 1, UserTrusted: true, IsEdgeDevice: true, GroupID: 1, Type: portainer.EdgeAgentOnDockerEnvironment}
-	untrustedEndpoint := portainer.Endpoint{ID: 2, UserTrusted: false, IsEdgeDevice: true, GroupID: 1, Type: portainer.EdgeAgentOnDockerEnvironment}
+	trustedEdgeDevice := portainer.Endpoint{ID: 1, UserTrusted: true, IsEdgeDevice: true, GroupID: 1, Type: portainer.EdgeAgentOnDockerEnvironment}
+	untrustedEdgeDevice := portainer.Endpoint{ID: 2, UserTrusted: false, IsEdgeDevice: true, GroupID: 1, Type: portainer.EdgeAgentOnDockerEnvironment}
 	regularUntrustedEdgeEndpoint := portainer.Endpoint{ID: 3, UserTrusted: false, IsEdgeDevice: false, GroupID: 1, Type: portainer.EdgeAgentOnDockerEnvironment}
 	regularTrustedEdgeEndpoint := portainer.Endpoint{ID: 4, UserTrusted: true, IsEdgeDevice: false, GroupID: 1, Type: portainer.EdgeAgentOnDockerEnvironment}
-	regularEndpoint := portainer.Endpoint{ID: 5, UserTrusted: false, IsEdgeDevice: false, GroupID: 1, Type: portainer.DockerEnvironment}
+	regularEndpoint := portainer.Endpoint{ID: 5, GroupID: 1, Type: portainer.DockerEnvironment}
 
 	endpoints := []portainer.Endpoint{
-		trustedEndpoint,
-		untrustedEndpoint,
+		trustedEdgeDevice,
+		untrustedEdgeDevice,
 		regularUntrustedEdgeEndpoint,
 		regularTrustedEdgeEndpoint,
 		regularEndpoint,
@@ -86,28 +86,31 @@ func Test_Filter_edgeDeviceFilter(t *testing.T) {
 	tests := []filterTest{
 		{
 			"should show all edge endpoints",
-			[]portainer.EndpointID{trustedEndpoint.ID, untrustedEndpoint.ID, regularUntrustedEdgeEndpoint.ID, regularTrustedEdgeEndpoint.ID},
-			EnvironmentsQuery{edgeDeviceFilter: EdgeDeviceFilterAll},
-		},
-		{
-			"should show only trusted edge devices",
-			[]portainer.EndpointID{trustedEndpoint.ID, regularTrustedEdgeEndpoint.ID},
+			[]portainer.EndpointID{trustedEdgeDevice.ID, untrustedEdgeDevice.ID, regularUntrustedEdgeEndpoint.ID, regularTrustedEdgeEndpoint.ID},
 			EnvironmentsQuery{
-				edgeDeviceFilter: EdgeDeviceFilterTrusted,
+				types: []portainer.EndpointType{portainer.EdgeAgentOnDockerEnvironment, portainer.EdgeAgentOnKubernetesEnvironment},
 			},
 		},
 		{
-			"should show only untrusted edge devices",
-			[]portainer.EndpointID{untrustedEndpoint.ID, regularUntrustedEdgeEndpoint.ID},
+			"should show only trusted edge devices and other regular endpoints",
+			[]portainer.EndpointID{trustedEdgeDevice.ID, regularEndpoint.ID},
 			EnvironmentsQuery{
-				edgeDeviceFilter: EdgeDeviceFilterUntrusted,
+				edgeDevice: BoolAddr(true),
+			},
+		},
+		{
+			"should show only untrusted edge devices and other regular endpoints",
+			[]portainer.EndpointID{untrustedEdgeDevice.ID, regularEndpoint.ID},
+			EnvironmentsQuery{
+				edgeDevice:          BoolAddr(true),
+				edgeDeviceUntrusted: true,
 			},
 		},
 		{
 			"should show no edge devices",
 			[]portainer.EndpointID{regularEndpoint.ID, regularUntrustedEdgeEndpoint.ID, regularTrustedEdgeEndpoint.ID},
 			EnvironmentsQuery{
-				edgeDeviceFilter: EdgeDeviceFilterNone,
+				edgeDevice: BoolAddr(false),
 			},
 		},
 	}

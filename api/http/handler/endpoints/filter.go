@@ -15,16 +15,17 @@ import (
 )
 
 type EnvironmentsQuery struct {
-	search           string
-	types            []portainer.EndpointType
-	tagIds           []portainer.TagID
-	endpointIds      []portainer.EndpointID
-	tagsPartialMatch bool
-	groupIds         []portainer.EndpointGroupID
-	status           []portainer.EndpointStatus
-	edgeDeviceFilter EdgeDeviceFilter
-	name             string
-	agentVersions    []string
+	search              string
+	types               []portainer.EndpointType
+	tagIds              []portainer.TagID
+	endpointIds         []portainer.EndpointID
+	tagsPartialMatch    bool
+	groupIds            []portainer.EndpointGroupID
+	status              []portainer.EndpointStatus
+	edgeDevice          *bool
+	edgeDeviceUntrusted bool
+	name                string
+	agentVersions       []string
 }
 
 func parseQuery(r *http.Request) (EnvironmentsQuery, error) {
@@ -64,19 +65,27 @@ func parseQuery(r *http.Request) (EnvironmentsQuery, error) {
 
 	name, _ := request.RetrieveQueryParameter(r, "name", true)
 
-	edgeDeviceFilter, _ := request.RetrieveQueryParameter(r, "edgeDeviceFilter", false)
+	edgeDeviceParam, _ := request.RetrieveQueryParameter(r, "edgeDevice", true)
+
+	var edgeDevice *bool
+	if edgeDeviceParam != "" {
+		edgeDevice = BoolAddr(edgeDeviceParam == "true")
+	}
+
+	edgeDeviceUntrusted, _ := request.RetrieveBooleanQueryParameter(r, "edgeDeviceUntrusted", true)
 
 	return EnvironmentsQuery{
-		search:           search,
-		types:            endpointTypes,
-		tagIds:           tagIDs,
-		endpointIds:      endpointIDs,
-		tagsPartialMatch: tagsPartialMatch,
-		groupIds:         groupIDs,
-		status:           status,
-		edgeDeviceFilter: EdgeDeviceFilter(edgeDeviceFilter),
-		name:             name,
-		agentVersions:    agentVersions,
+		search:              search,
+		types:               endpointTypes,
+		tagIds:              tagIDs,
+		endpointIds:         endpointIDs,
+		tagsPartialMatch:    tagsPartialMatch,
+		groupIds:            groupIDs,
+		status:              status,
+		edgeDevice:          edgeDevice,
+		edgeDeviceUntrusted: edgeDeviceUntrusted,
+		name:                name,
+		agentVersions:       agentVersions,
 	}, nil
 }
 
@@ -95,8 +104,8 @@ func (handler *Handler) filterEndpointsByQuery(filteredEndpoints []portainer.End
 		filteredEndpoints = filterEndpointsByName(filteredEndpoints, query.name)
 	}
 
-	if query.edgeDeviceFilter != "" {
-		filteredEndpoints = filterEndpointsByEdgeDevice(filteredEndpoints, query.edgeDeviceFilter)
+	if query.edgeDevice != nil {
+		filteredEndpoints = filterEndpointsByEdgeDevice(filteredEndpoints, *query.edgeDevice, query.edgeDeviceUntrusted)
 	}
 
 	if len(query.status) > 0 {
@@ -251,37 +260,27 @@ func filterEndpointsByTypes(endpoints []portainer.Endpoint, endpointTypes []port
 	return filteredEndpoints
 }
 
-func filterEndpointsByEdgeDevice(endpoints []portainer.Endpoint, edgeDeviceFilter EdgeDeviceFilter) []portainer.Endpoint {
+func filterEndpointsByEdgeDevice(endpoints []portainer.Endpoint, edgeDevice bool, untrusted bool) []portainer.Endpoint {
 	filteredEndpoints := make([]portainer.Endpoint, 0)
 
 	for _, endpoint := range endpoints {
-		if shouldReturnEdgeDevice(endpoint, edgeDeviceFilter) {
+		if shouldReturnEdgeDevice(endpoint, edgeDevice, untrusted) {
 			filteredEndpoints = append(filteredEndpoints, endpoint)
 		}
 	}
 	return filteredEndpoints
 }
 
-func shouldReturnEdgeDevice(endpoint portainer.Endpoint, edgeDeviceFilter EdgeDeviceFilter) bool {
-	// none - return all endpoints that are not edge devices
-	if edgeDeviceFilter == EdgeDeviceFilterNone && !endpoint.IsEdgeDevice {
-		return true
-	}
-
+func shouldReturnEdgeDevice(endpoint portainer.Endpoint, edgeDeviceParam bool, untrustedParam bool) bool {
 	if !endpointutils.IsEdgeEndpoint(&endpoint) {
-		return false
-	}
-
-	switch edgeDeviceFilter {
-	case EdgeDeviceFilterAll:
 		return true
-	case EdgeDeviceFilterTrusted:
-		return endpoint.UserTrusted
-	case EdgeDeviceFilterUntrusted:
-		return !endpoint.UserTrusted
 	}
 
-	return false
+	if !edgeDeviceParam {
+		return !endpoint.IsEdgeDevice
+	}
+
+	return endpoint.IsEdgeDevice && endpoint.UserTrusted == !untrustedParam
 }
 
 func convertTagIDsToTags(tagsMap map[portainer.TagID]string, tagIDs []portainer.TagID) []string {

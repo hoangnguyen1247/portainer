@@ -22,7 +22,8 @@ export interface EnvironmentsQueryParams {
   tagsPartialMatch?: boolean;
   groupIds?: EnvironmentGroupId[];
   status?: EnvironmentStatus[];
-  edgeDeviceFilter?: 'all' | 'trusted' | 'untrusted' | 'none';
+  edgeDevice?: boolean;
+  edgeDeviceUntrusted?: boolean;
   name?: string;
   agentVersions?: string[];
 }

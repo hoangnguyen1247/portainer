@@ -14,15 +14,6 @@ import (
 	"github.com/portainer/portainer/api/http/security"
 )
 
-type EdgeDeviceFilter string
-
-const (
-	EdgeDeviceFilterAll       EdgeDeviceFilter = "all"
-	EdgeDeviceFilterTrusted   EdgeDeviceFilter = "trusted"
-	EdgeDeviceFilterUntrusted EdgeDeviceFilter = "untrusted"
-	EdgeDeviceFilterNone      EdgeDeviceFilter = "none"
-)
-
 const (
 	EdgeDeviceIntervalMultiplier = 2
 	EdgeDeviceIntervalAdd        = 20
@@ -53,7 +44,8 @@ var endpointGroupNames map[portainer.EndpointGroupID]string
 // @param endpointIds query []int false "will return only these environments(endpoints)"
 // @param provisioned query bool false "If true, will return environment(endpoint) that were provisioned"
 // @param agentVersions query []string false "will return only environments with on of these agent versions"
-// @param edgeDeviceFilter query string false "will return only these edge environments, none will return only regular edge environments" Enum("all", "trusted", "untrusted", "none")
+// @param edgeDevice query bool false "if exists true show only edge devices, false show only regular edge endpoints. if missing, will show both types (relevant only for edge endpoints)"
+// @param edgeDeviceUntrusted query bool false "if true, show only untrusted endpoints, if false show only trusted (relevant only for edge devices, and if edgeDevice is true)"
 // @param name query string false "will return only environments(endpoints) with this name"
 // @success 200 {array} portainer.Endpoint "Endpoints"
 // @failure 500 "Server error"

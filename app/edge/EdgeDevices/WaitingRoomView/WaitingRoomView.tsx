@@ -15,7 +15,8 @@ export function WaitingRoomView() {
   const storageKey = 'edge-devices-waiting-room';
   const router = useRouter();
   const { environments, isLoading, totalCount } = useEnvironmentList({
-    edgeDeviceFilter: 'untrusted',
+    edgeDevice: true,
+    edgeDeviceUntrusted: true,
   });
 
   if (process.env.PORTAINER_EDITION !== 'BE') {

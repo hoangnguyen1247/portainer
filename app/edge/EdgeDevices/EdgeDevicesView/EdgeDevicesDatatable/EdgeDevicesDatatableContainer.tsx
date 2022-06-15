@@ -89,7 +89,7 @@ function Loader({ children, storageKey }: LoaderProps) {
 
   const { environments, isLoading, totalCount } = useEnvironmentList(
     {
-      edgeDeviceFilter: 'trusted',
+      edgeDevice: true,
       search: debouncedSearchValue,
       ...pagination,
     },
