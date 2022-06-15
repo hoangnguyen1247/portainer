@@ -83,6 +83,7 @@ export interface EnvironmentSecuritySettings {
 }
 
 export type Environment = {
+  Agent: { Version: string };
   Id: EnvironmentId;
   Type: EnvironmentType;
   TagIds: TagId[];
@@ -104,6 +105,7 @@ export type Environment = {
   Edge: EnvironmentEdge;
   SecuritySettings: EnvironmentSecuritySettings;
 };
+
 /**
  * TS reference of endpoint_create.go#EndpointCreationType iota
  */
