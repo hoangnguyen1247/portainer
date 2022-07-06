@@ -10,12 +10,12 @@ export interface Crumb {
   linkParams?: Record<string, unknown>;
 }
 interface Props {
-  breadcrumbs: (Crumb | string)[];
+  breadcrumbs: (Crumb | string | number)[];
 }
 
 export function Breadcrumbs({ breadcrumbs }: Props) {
   return (
-    <div className="breadcrumb-links">
+    <div className="breadcrumb-links font-medium text-gray-7">
       {breadcrumbs.map((crumb, index) => (
         <Fragment key={index}>
           {renderCrumb(crumb)}
@@ -26,14 +26,18 @@ export function Breadcrumbs({ breadcrumbs }: Props) {
   );
 }
 
-function renderCrumb(crumb: Crumb | string) {
-  if (typeof crumb === 'string') {
+function renderCrumb(crumb: Crumb | string | number) {
+  if (typeof crumb !== 'object') {
     return crumb;
   }
 
   if (crumb.link) {
     return (
-      <Link to={crumb.link} params={crumb.linkParams}>
+      <Link
+        to={crumb.link}
+        params={crumb.linkParams}
+        className="text-blue-9 hover:underline"
+      >
         {crumb.label}
       </Link>
     );
