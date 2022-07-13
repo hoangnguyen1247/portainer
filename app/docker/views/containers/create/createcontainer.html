@@ -1,7 +1,4 @@
-<rd-header>
-  <rd-header-title title-text="Create container"></rd-header-title>
-  <rd-header-content> <a ui-sref="docker.containers">Containers</a> &gt; Add container </rd-header-content>
-</rd-header>
+<page-header title="'Create container'" breadcrumbs="[{label:'Containers', link:'docker.containers'}, 'Add container']"> </page-header>
 
 <information-panel title-text="Caution" ng-if="state.mode == 'duplicate'">
   <span class="small">
@@ -75,7 +72,7 @@
                   ></portainer-tooltip>
                 </label>
                 <label class="switch box-selector-item limited business" style="margin-left: 20px">
-                  <input type="checkbox" ng-model="formValues.EnableWebhook" disabled="disabled" ng-checked="true" />
+                  <input type="checkbox" ng-model="formValues.EnableWebhook" disabled="disabled" ng-checked="false" />
                   <i class="orange-icon" aria-hidden="true" style="margin-right: 2px"></i>
                 </label>
                 <be-feature-indicator feature="containerWebhookFeature"></be-feature-indicator>
