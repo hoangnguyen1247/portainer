@@ -59,10 +59,13 @@
                 </p>
               </div>
               <div class="col-sm-12">
-                <label class="control-label text-left"> Resource assignment </label>
-                <label class="switch" style="margin-left: 20px">
-                  <input type="checkbox" ng-model="$ctrl.formValues.HasQuota" /><i data-cy="k8sNamespaceCreate-resourceAssignmentToggle"></i>
-                </label>
+                <por-switch-field
+                  data-cy="'k8sNamespaceCreate-resourceAssignmentToggle'"
+                  label="'Resource assignment'"
+                  name="'k8s-resourcepool-resourcequota'"
+                  checked="$ctrl.formValues.HasQuota"
+                  on-change="($ctrl.onToggleResourceQuota)"
+                ></por-switch-field>
               </div>
             </div>
             <div class="form-group" ng-if="$ctrl.formValues.HasQuota && !$ctrl.isQuotaValid()">
@@ -175,8 +178,9 @@
               </span>
             </div>
             <div class="col-sm-12 form-section-title">
-              <!-- <i class="fa fa-route" aria-hidden="true" style="margin-right: 2px"></i> -->
+              <!-- TODO custom icon-->
               <!-- <pr-icon icon="'route'" feather="true"></pr-icon> -->
+              <i class="fa fa-route" aria-hidden="true" style="margin-right: 2px"></i>
               standard
             </div>
 
