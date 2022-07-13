@@ -15,7 +15,7 @@
           <form class="form-horizontal" autocomplete="off" name="resourcePoolCreationForm">
             <!-- #region NAME INPUT -->
             <div class="form-group">
-              <label for="pool_name" class="col-sm-1 control-label text-left">Name</label>
+              <label for="pool_name" class="col-sm-1 control-label text-left required">Name</label>
               <div class="col-sm-11">
                 <input
                   type="text"
@@ -34,13 +34,15 @@
             <div class="form-group" ng-show="resourcePoolCreationForm.pool_name.$invalid || $ctrl.state.isAlreadyExist || $ctrl.state.hasPrefixKube">
               <div class="col-sm-12 small text-warning">
                 <div ng-messages="resourcePoolCreationForm.pool_name.$error">
-                  <p ng-message="required"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> This field is required.</p>
+                  <p ng-message="required"><pr-icon icon="'alert-triangle'" feather="true" mode="'warning'"></pr-icon>This field is required.</p>
                   <p ng-message="pattern"
-                    ><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> This field must consist of lower case alphanumeric characters or '-', and contain at most 63
-                    characters, and must start and end with an alphanumeric character.</p
+                    ><pr-icon icon="'alert-triangle'" feather="true" mode="'warning'"></pr-icon> This field must consist of lower case alphanumeric characters or '-', and contain
+                    at most 63 characters, and must start and end with an alphanumeric character.</p
                   >
                 </div>
-                <p ng-if="$ctrl.state.hasPrefixKube"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Prefix "kube-" is reserved for Kubernetes system namespaces.</p>
+                <p ng-if="$ctrl.state.hasPrefixKube"
+                  ><pr-icon icon="'alert-triangle'" feather="true" mode="'warning'"></pr-icon> Prefix "kube-" is reserved for Kubernetes system namespaces.</p
+                >
               </div>
             </div>
             <!-- #endregion -->
@@ -51,7 +53,7 @@
             <div class="form-group">
               <div class="col-sm-12 small text-muted">
                 <p>
-                  <i class="fa fa-info-circle blue-icon" aria-hidden="true" style="margin-right: 2px"></i>
+                  <pr-icon icon="'info'" feather="true" mode="'primary'"></pr-icon>
                   A namespace segments the underlying physical Kubernetes cluster into smaller virtual clusters. You should assign a capped limit of resources to this namespace or
                   disable for the safe operation of your platform.
                 </p>
@@ -65,7 +67,7 @@
             </div>
             <div class="form-group" ng-if="$ctrl.formValues.HasQuota && !$ctrl.isQuotaValid()">
               <span class="col-sm-12 text-warning small">
-                <p> <i class="fa fa-exclamation-triangle" aria-hidden="true" style="margin-right: 2px"></i> At least a single limit must be set for the quota to be valid. </p>
+                <p><pr-icon icon="'alert-triangle'" feather="true" mode="'warning'"></pr-icon> At least a single limit must be set for the quota to be valid. </p>
               </span>
             </div>
             <!-- !quotas-switch -->
@@ -107,7 +109,8 @@
                   <div class="col-sm-12 small text-warning">
                     <div ng-messages="resourcePoolCreationForm.pool_name.$error">
                       <p
-                        ><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Value must be between {{ $ctrl.defaults.MemoryLimit }} and {{ $ctrl.state.sliderMaxMemory }}
+                        ><pr-icon icon="'alert-triangle'" feather="true" mode="'warning'"></pr-icon> Value must be between {{ $ctrl.defaults.MemoryLimit }} and
+                        {{ $ctrl.state.sliderMaxMemory }}
                       </p>
                     </div>
                   </div>
@@ -142,7 +145,7 @@
 
             <div class="form-group">
               <span class="col-sm-12 text-muted small">
-                <i class="fa fa-info-circle blue-icon" aria-hidden="true" style="margin-right: 2px"></i>
+                <pr-icon icon="'info'" feather="true" mode="'primary'"></pr-icon>
                 You can set a quota on the amount of external load balancers that can be created inside this namespace. Set this quota to 0 to effectively disable the use of load
                 balancers in this namespace.
               </span>
@@ -166,13 +169,14 @@
 
             <div class="form-group">
               <span class="col-sm-12 text-muted small">
-                <i class="fa fa-info-circle blue-icon" aria-hidden="true" style="margin-right: 2px"></i>
+                <pr-icon icon="'info'" feather="true" mode="'primary'"></pr-icon>
                 Quotas can be set on each storage option to prevent users from exceeding a specific threshold when deploying applications. You can set a quota to 0 to effectively
                 prevent the usage of a specific storage option inside this namespace.
               </span>
             </div>
             <div class="col-sm-12 form-section-title">
-              <i class="fa fa-route" aria-hidden="true" style="margin-right: 2px"></i>
+              <!-- <i class="fa fa-route" aria-hidden="true" style="margin-right: 2px"></i> -->
+              <!-- <pr-icon icon="'route'" feather="true"></pr-icon> -->
               standard
             </div>
 
@@ -194,7 +198,7 @@
               <div class="form-group" ng-if="$ctrl.formValues.IngressClasses.length > 0">
                 <div class="col-sm-12 small text-muted">
                   <p>
-                    <i class="fa fa-info-circle blue-icon" aria-hidden="true" style="margin-right: 2px"></i>
+                    <<pr-icon icon="'info'" feather="true" mode="'primary'"></pr-icon>
                     Enable and configure ingresses available to users when deploying applications.
                   </p>
                 </div>
@@ -231,7 +235,7 @@
                       ng-click="$ctrl.addHostname(ic)"
                       data-cy="namespaceCreate-addHostButton{{ ic.IngressClass.Name }}"
                     >
-                      <i class="fa fa-plus-circle" aria-hidden="true"></i> add hostname
+                      <pr-icon icon="'info'" feather="true" mode="'primary'"></pr-icon> add hostname
                     </span>
                   </div>
                   <div class="col-sm-12" style="margin-top: 10px">
@@ -253,7 +257,7 @@
                         </div>
                         <div class="col-sm-1 input-group input-group-sm" ng-if="$index > 0">
                           <button class="btn btn-sm btn-danger" type="button" ng-click="$ctrl.removeHostname(ic, $index)">
-                            <i class="fa fa-trash-alt" aria-hidden="true"></i>
+                            <pr-icon icon="'trash-2'" feather="true"></pr-icon>
                           </button>
                         </div>
                       </div>
@@ -266,14 +270,14 @@
                         "
                       >
                         <ng-messages for="resourcePoolCreationForm['hostname_' + ic.IngressClass.Name + '_' + $index].$error">
-                          <p ng-message="required"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Hostname is required.</p>
+                          <p ng-message="required"><pr-icon icon="'alert-triangle'" feather="true" mode="'warning'"></pr-icon> Hostname is required.</p>
                           <p ng-message="pattern">
-                            <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+                            <pr-icon icon="'alert-triangle'" feather="true" mode="'warning'"></pr-icon>
                             This field must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com').
                           </p>
                         </ng-messages>
                         <p ng-if="$ctrl.state.duplicates.ingressHosts.refs[ic.IngressClass.Name][$index] !== undefined">
-                          <i class="fa fa-exclamation-triangle" aria-hidden="true"></i> This hostname is already used.
+                          <pr-icon icon="'alert-triangle'" feather="true" mode="'warning'"></pr-icon> This hostname is already used.
                         </p>
                       </div>
                     </div>
@@ -283,7 +287,7 @@
               <div ng-repeat-end class="form-group" ng-if="ic.Selected" style="margin-bottom: 20px">
                 <div class="col-sm-12 small text-muted" style="margin-top: 5px">
                   <p>
-                    <i class="fa fa-info-circle blue-icon" aria-hidden="true" style="margin-right: 2px"></i>
+                    <pr-icon icon="'info'" feather="true" mode="'primary'"></pr-icon>
                     You can specify a list of annotations that will be associated to the ingress.
                   </p>
                 </div>
@@ -296,7 +300,7 @@
                     ng-click="$ctrl.addAnnotation(ic)"
                     data-cy="namespaceCreate-addAnnotation{{ ic.IngressClass.Name }}"
                   >
-                    <i class="fa fa-plus-circle" aria-hidden="true"></i> add annotation
+                    <pr-icon icon="'plus'" feather="true"></pr-icon> add annotation
                   </span>
                   <portainer-tooltip
                     message="'Use annotations to configure options for an ingress. Review Nginx or Traefik documentation to find the annotations supported by your choice of ingress type.'"
@@ -309,7 +313,7 @@
                     ng-click="$ctrl.addRewriteAnnotation(ic)"
                     data-cy="namespaceCreate-addAnnotation{{ ic.IngressClass.Name }}"
                   >
-                    <i class="fa fa-plus-circle" aria-hidden="true"></i> add rewrite annotation
+                    <pr-icon icon="'plus'" feather="true"></pr-icon> add rewrite annotation
                   </span>
                   <portainer-tooltip
                     ng-if="ic.IngressClass.Type === $ctrl.IngressClassTypes.NGINX"
@@ -323,7 +327,7 @@
                     ng-click="$ctrl.addUseregexAnnotation(ic)"
                     data-cy="namespaceCreate-addAnnotation{{ ic.IngressClass.Name }}"
                   >
-                    <i class="fa fa-plus-circle" aria-hidden="true"></i> add regular expression annotation
+                    <pr-icon icon="'plus'" feather="true"></pr-icon> add regular expression annotation
                   </span>
                   <portainer-tooltip
                     ng-if="ic.IngressClass.Type === $ctrl.IngressClassTypes.NGINX"
@@ -366,7 +370,7 @@
                         ng-click="$ctrl.removeAnnotation(ic, $index)"
                         data-cy="namespaceCreate-deleteAnnotationButton{{ ic.IngressClass.Name }}"
                       >
-                        <i class="fa fa-trash-alt" aria-hidden="true"></i>
+                        <pr-icon icon="'trash-2'" feather="true"></pr-icon>
                       </button>
                     </div>
                   </div>
@@ -380,7 +384,7 @@
             <div class="form-group">
               <div class="col-sm-12 small text-muted">
                 <p>
-                  <i class="fa fa-info-circle blue-icon" aria-hidden="true" style="margin-right: 2px"></i>
+                  <pr-icon icon="'info'" feather="true" mode="'primary'"></pr-icon>
                   Define which registry can be used by users who have access to this namespace.
                 </p>
               </div>
