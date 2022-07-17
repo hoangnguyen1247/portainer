@@ -54,7 +54,7 @@
             <div class="col-sm-12">
               <button
                 type="submit"
-                class="btn btn-primary btn-sm mt-1"
+                class="btn btn-primary btn-sm"
                 ng-disabled="isDemoUser || (AuthenticationMethod !== 1 && !initialUser) || !formValues.currentPassword || !formValues.newPassword || !formValues.confirmPassword || form.$invalid || form.new_password.$viewValue !== formValues.confirmPassword"
                 ng-click="updatePassword()"
               >
